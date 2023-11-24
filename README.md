@@ -5,7 +5,7 @@ This repository contains my solutions to the assignments of the [CS231n](http://
 
 Find course notes and assignments [here](http://cs231n.github.io) and be sure to check out the video lectures for [Winter 2016](https://www.youtube.com/playlist?list=PLkt2uSq6rBVctENoVBg1TpCC7OQi31AlC) and [Spring 2017](https://www.youtube.com/playlist?list=PLC1qU-LWwrF64f4QKQT-Vg5Wr4qEE1Zxk)!
 
-Assignments using Tensorflow are completed, those using Pytorch will be implemented in the future.
+
 
 ### Assignment 1:
 - [Q1]: k-Nearest Neighbor classifier. 
