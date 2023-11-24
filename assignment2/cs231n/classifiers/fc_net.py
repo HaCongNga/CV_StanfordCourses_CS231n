@@ -73,7 +73,14 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zeros.                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        for l, (i,j) in enumerate(zip([input_dim, *hidden_dims], [*hidden_dims, num_classes])) :
+            self.params[f'W{l+1}'] = np.random.randn(i,j) * weight_scale
+            self.params[f'b{l+1}'] = np.random.randn(j)
+            if self.normalization and l < self.num_layers - 1 :
+                self.params[f'gamma{l+1}'] = np.ones(j)
+                self.params[f'beta{l+1}'] = np.zeros(j)
 
+            
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -147,14 +154,41 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+         # Initialize cache for each layer
+        scores = X.reshape(X.shape[0], -1)
+        caches = []
+        for layer_idx in range(1, self.num_layers+1) :
+            ### Affinie Forward
+            W, b = self.params[f'W{layer_idx}'], self.params[f'b{layer_idx}']
 
-        pass
+            scores, cache = affine_forward(scores, W, b)
+            caches.append(cache)
 
+            ## Batch norm
+            if self.normalization == 'batchnorm' and layer_idx < self.num_layers:
+                gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
+                scores, cache = batchnorm_forward(scores, gamma, beta, self.bn_params[layer_idx-1])
+                caches.append(cache)
+            if self.normalization == 'layernorm' and layer_idx < self.num_layers :
+                gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
+                scores, cache = layernorm_forward(scores, gamma, beta, eps=1e-5)
+                cache.append(cache)
+            if layer_idx < self.num_layers :
+                ## Relu 
+                scores, cache = relu_forward(scores)
+                caches.append(cache)
+
+            ## Dropout
+            if self.use_dropout and layer_idx < self.num_layers :
+                scores, cache = dropout_forward(scores, self.dropout_param)
+                caches.append(cache)
+        #pass
+        
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
+        
         # If test mode return early.
         if mode == "test":
             return scores
@@ -174,9 +208,26 @@ class FullyConnectedNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        loss, dscores = softmax_loss(scores, y)
+        #pass
+        for layer_idx in range(self.num_layers,0,-1) :
+            # Dropout backward :
+            if self.use_dropout and layer_idx < self.num_layers :
+                dscores = dropout_backward(scores, cache.pop())
+            if layer_idx < self.num_layers :
+                dscores = relu_backward(dscores, cache.pop())
+            if self.normalization == 'batchnorm' and layer_idx < self.num_layers :
+                dscores, dgamma, dbeta = batchnorm_backward(dscores, cache.pop())
+                grads[f'gamma[layer_idx]'], grads[f'beta{layer_idx}'] = dgamma, dbeta
+            if self.normalization == 'layernorm' and layer_idx < self.num_layers :
+                dscores, dgamma, dbeta = layernorm_backward(dscores, cache.pop())
+                grads[f'gamma{layer_idx}'], grads[f'beta{layer_idx}'] = dgamma, dbeta
 
-        pass
-
+            dscores, dW, db = affine_backward(dscores, cache.pop())
+            grads[f'W{layer_idx}'] = dW + self.reg * self.params[f'W{layer_idx}']
+            grads[f'b{layer_idx}'] = db + self.reg * self.params[f'b{layer_idx}']
+        for layer_idx in range(1, self.num_layers + 1) :
+            loss += 0.5 * self.reg * np.sum(self.params[f'W{layer_idx}'] ** 2)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
