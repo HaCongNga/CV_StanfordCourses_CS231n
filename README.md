@@ -17,7 +17,7 @@ Find course notes and assignments [here](http://cs231n.github.io) and be sure to
 ### Assignment 2:
 - [Q1]: Fully-connected Neural Network. (_Done_)
 - [Q2]: Batch Normalization. (_Done_)
-- [Q3]: Dropout. (_Done_)
+- Q3 Dropout. (_Done_)
 - [Q4]: Convolutional Networks. (_Done_)
 - [Q5]: PyTorch / TensorFlow on CIFAR-10. (_Done_)
 
