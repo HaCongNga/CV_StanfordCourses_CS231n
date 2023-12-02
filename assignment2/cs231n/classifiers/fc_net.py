@@ -165,14 +165,10 @@ class FullyConnectedNet(object):
             caches.append(cache)
 
             ## Batch norm
-            if self.normalization == 'batchnorm' and layer_idx < self.num_layers:
+            if self.normalization is not None and layer_idx < self.num_layers:
                 gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
                 scores, cache = batchnorm_forward(scores, gamma, beta, self.bn_params[layer_idx-1])
                 caches.append(cache)
-            if self.normalization == 'layernorm' and layer_idx < self.num_layers :
-                gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
-                scores, cache = layernorm_forward(scores, gamma, beta, eps=1e-5)
-                cache.append(cache)
             if layer_idx < self.num_layers :
                 ## Relu 
                 scores, cache = relu_forward(scores)
@@ -218,7 +214,7 @@ class FullyConnectedNet(object):
                 dscores = relu_backward(dscores, cache.pop())
             if self.normalization == 'batchnorm' and layer_idx < self.num_layers :
                 dscores, dgamma, dbeta = batchnorm_backward(dscores, cache.pop())
-                grads[f'gamma[layer_idx]'], grads[f'beta{layer_idx}'] = dgamma, dbeta
+                grads[f'gamma{layer_idx}'], grads[f'beta{layer_idx}'] = dgamma, dbeta
             if self.normalization == 'layernorm' and layer_idx < self.num_layers :
                 dscores, dgamma, dbeta = layernorm_backward(dscores, cache.pop())
                 grads[f'gamma{layer_idx}'], grads[f'beta{layer_idx}'] = dgamma, dbeta
