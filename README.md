@@ -1,5 +1,5 @@
 # Stanford_University__CS231n: DEEP LEARNING FOR COMPUTER VISION - Assignment Solutions
-
+NOTE (6/12/2023): I am in the peak time for the semeter' final exams. This repo is expected to be completed by 10/01/2024.
 
 This repository contains my solutions to the assignments of the [CS231n](http://cs231n.stanford.edu/) course offered by Stanford University (2022).
 
