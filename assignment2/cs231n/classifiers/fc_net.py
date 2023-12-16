@@ -137,7 +137,8 @@ class FullyConnectedNet(object):
         # behave differently during training and testing.
         if self.use_dropout:
             self.dropout_param["mode"] = mode
-        if self.normalization == "batchnorm":
+       #if self.normalization == "batchnorm":
+        if self.normalization :
             for bn_param in self.bn_params:
                 bn_param["mode"] = mode
         scores = None
@@ -165,9 +166,14 @@ class FullyConnectedNet(object):
             caches.append(cache)
 
             ## Batch norm
-            if self.normalization is not None and layer_idx < self.num_layers:
+            if self.normalization =='batchnorm' and layer_idx < self.num_layers:
                 gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
                 scores, cache = batchnorm_forward(scores, gamma, beta, self.bn_params[layer_idx-1])
+                caches.append(cache)
+            # Layer norm
+            if self.normalization =='layernorm' and layer_idx < self.num_layers:
+                gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
+                scores, cache = layernorm_forward(scores, gamma, beta, self.bn_params[layer_idx-1])
                 caches.append(cache)
             if layer_idx < self.num_layers :
                 ## Relu 
@@ -209,7 +215,7 @@ class FullyConnectedNet(object):
         for layer_idx in range(self.num_layers,0,-1) :
             # Dropout backward :
             if self.use_dropout and layer_idx < self.num_layers :
-                dscores = dropout_backward(scores, cache.pop())
+                dscores = dropout_backward(dscores, cache.pop())
             if layer_idx < self.num_layers :
                 dscores = relu_backward(dscores, cache.pop())
             if self.normalization == 'batchnorm' and layer_idx < self.num_layers :

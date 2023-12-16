@@ -210,7 +210,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     - out: of shape (N, D)
     - cache: A tuple of values needed in the backward pass
     """
-    mode = bn_param["mode"]
+    mode = bn_param.get("mode", 'train')
     eps = bn_param.get("eps", 1e-5)
     momentum = bn_param.get("momentum", 0.9)
 
@@ -485,27 +485,24 @@ def layernorm_backward(dout, cache):
 
     #pass
     x_normalized = cache['x_normalized']
+    x = cache['x']
     gamma = cache['gamma']
     beta = cache['beta']
-    mean = cache['mean']
-    var = cache['var']
     eps = cache['eps']
-    x = cache['x']
-    N, D = x.shape
 
-    # Backpropagate through the scale and shift
-    dgamma = np.sum(dout * x_normalized, axis=1)
-    dbeta = np.sum(dout, axis=1)
+    N, D = dout.shape
 
-    # Backpropagate through the normalization
+    # Backpropagate through layer normalization
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(x_normalized * dout, axis=0)
     dx_normalized = dout * gamma
 
-    # Backpropagate through the variance and mean
-    d_var = np.sum(dx_normalized * (x - mean) * -0.5 * (var + eps)**(-1.5), axis=1)
-    d_mean = np.sum(dx_normalized * -1 / np.sqrt(var + eps), axis=1) + d_var * np.sum(-2 * (x - mean), axis=1) / N
+    # Backpropagate through the scale and shift parameters
+    dvar = np.sum(dx_normalized * (x - x_normalized), axis=0) * -0.5 * (x_normalized ** -3 / np.sqrt(eps + 1e-5))
+    dmean = np.sum(dx_normalized, axis=0) * -1 / np.sqrt(eps + 1e-5)
 
-    # Backpropagate through the mean
-    dx = dx_normalized / np.sqrt(var + eps) + d_var * 2 * (x - mean) / N + d_mean / N
+    # Backpropagate through mean and variance
+    dx = dx_normalized / np.sqrt(eps + 1e-5) + dvar * 2 * (x - x_normalized) / D + dmean / D
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
