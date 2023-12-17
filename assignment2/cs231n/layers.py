@@ -502,7 +502,7 @@ def layernorm_backward(dout, cache):
     dmean = np.sum(dx_normalized, axis=0) * -1 / np.sqrt(eps + 1e-5)
 
     # Backpropagate through mean and variance
-    dx = dx_normalized / np.sqrt(eps + 1e-5) + dvar * 2 * (x - x_normalized) / D + dmean / D
+    dx = dx_normalized / np.sqrt(eps + 1e-5) + dvar * 2 * (x - x_normalized) / D + dmean * 1/D
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
