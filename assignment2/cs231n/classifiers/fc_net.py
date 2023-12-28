@@ -137,8 +137,7 @@ class FullyConnectedNet(object):
         # behave differently during training and testing.
         if self.use_dropout:
             self.dropout_param["mode"] = mode
-       #if self.normalization == "batchnorm":
-        if self.normalization :
+        if self.normalization == "batchnorm":
             for bn_param in self.bn_params:
                 bn_param["mode"] = mode
         scores = None
@@ -166,15 +165,11 @@ class FullyConnectedNet(object):
             caches.append(cache)
 
             ## Batch norm
-            if self.normalization =='batchnorm' and layer_idx < self.num_layers:
+            if self.normalization is not None and layer_idx < self.num_layers:
                 gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
                 scores, cache = batchnorm_forward(scores, gamma, beta, self.bn_params[layer_idx-1])
                 caches.append(cache)
-            # Layer norm
-            if self.normalization =='layernorm' and layer_idx < self.num_layers:
-                gamma, beta = self.params[f'gamma{layer_idx}'], self.params[f'beta{layer_idx}']
-                scores, cache = layernorm_forward(scores, gamma, beta, self.bn_params[layer_idx-1])
-                caches.append(cache)
+                
             if layer_idx < self.num_layers :
                 ## Relu 
                 scores, cache = relu_forward(scores)
@@ -215,17 +210,24 @@ class FullyConnectedNet(object):
         for layer_idx in range(self.num_layers,0,-1) :
             # Dropout backward :
             if self.use_dropout and layer_idx < self.num_layers :
-                dscores = dropout_backward(dscores, cache.pop())
+                cach = caches.pop()
+                _, mask = cach
+                #print(f'layer_idx: {layer_idx}, num_l:{self.num_layers} Line 213, scores: {scores.shape}, mask: {mask.shape}')
+                dscores = dropout_backward(dscores, cach)
             if layer_idx < self.num_layers :
-                dscores = relu_backward(dscores, cache.pop())
+                dscores = relu_backward(dscores, caches.pop())
             if self.normalization == 'batchnorm' and layer_idx < self.num_layers :
-                dscores, dgamma, dbeta = batchnorm_backward(dscores, cache.pop())
+                #print('fc_net.py Line 220')
+                dscores, dgamma, dbeta = batchnorm_backward(dscores, caches.pop())
+                #print('fc_net.py Line 222')
                 grads[f'gamma{layer_idx}'], grads[f'beta{layer_idx}'] = dgamma, dbeta
             if self.normalization == 'layernorm' and layer_idx < self.num_layers :
-                dscores, dgamma, dbeta = layernorm_backward(dscores, cache.pop())
+                #print('fc_net.py Line 225')
+                dscores, dgamma, dbeta = layernorm_backward(dscores, caches.pop())
+                #print('fc_net.py Line 227')
                 grads[f'gamma{layer_idx}'], grads[f'beta{layer_idx}'] = dgamma, dbeta
 
-            dscores, dW, db = affine_backward(dscores, cache.pop())
+            dscores, dW, db = affine_backward(dscores, caches.pop())
             grads[f'W{layer_idx}'] = dW + self.reg * self.params[f'W{layer_idx}']
             grads[f'b{layer_idx}'] = db + self.reg * self.params[f'b{layer_idx}']
         for layer_idx in range(1, self.num_layers + 1) :
