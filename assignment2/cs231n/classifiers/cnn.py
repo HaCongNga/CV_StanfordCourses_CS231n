@@ -111,11 +111,11 @@ class ThreeLayerConvNet(object):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #conv - relu - 2x2 max pool - affine - relu - affine - softmax
         caches = []
-        scores, cache = conv_forward_naive(X, W1, b1, conv_param)
+        scores, cache = conv_forward_fast(X, W1, b1, conv_param)
         caches.append(cache)
         scores, cache = relu_forward(scores)
         caches.append(cache)
-        scores, cache = max_pool_forward_naive(scores, pool_param)
+        scores, cache = max_pool_forward_fast(scores, pool_param)
         caches.append(cache)
         scores, cache = affine_forward(scores, W2, b2)
         caches.append(cache)
@@ -152,9 +152,9 @@ class ThreeLayerConvNet(object):
         dscores = relu_backward(dscores, caches.pop())
         dscores, grads['W2'], grads['b2'] = affine_backward(dscores, caches.pop())
         cach = caches.pop()
-        dscores = max_pool_backward_naive(dscores, cach)
+        dscores = max_pool_backward_fast(dscores, cach)
         dscores = relu_backward(dscores, caches.pop())
-        dscores, grads['W1'], grads['b1'] = conv_backward_naive(dscores, caches.pop())
+        dscores, grads['W1'], grads['b1'] = conv_backward_fast(dscores, caches.pop())
 
         grads['W3'] += self.reg * W3
         grads['W2'] += self.reg * W2

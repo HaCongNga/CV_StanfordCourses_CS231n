@@ -1022,6 +1022,7 @@ def spatial_groupnorm_backward(dout, cache):
     dx_normalized = dx_normalized.reshape((N, C, H, W))
 
     # Calculate gradients for mean and variance per group
+    print(f"1025 layers.py dx_normalized:{dx_normalized.shape}, x_grouped:{x_grouped.shape}, var_per_group:{var_per_group.shape}")
     dvar_per_group = np.sum(dx_normalized * (x_grouped - mean_per_group) * (-0.5) * np.power(var_per_group + eps, -1.5), axis=(2, 3, 4), keepdims=True)
     dmean_per_group = np.sum(dx_normalized * (-1) / np.sqrt(var_per_group + eps), axis=(2, 3, 4), keepdims=True) + dvar_per_group * np.sum(-2 * (x_grouped - mean_per_group), axis=(2, 3, 4), keepdims=True) / (C // G)
 
