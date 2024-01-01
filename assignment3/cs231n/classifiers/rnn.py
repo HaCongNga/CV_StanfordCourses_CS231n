@@ -147,8 +147,38 @@ class CaptioningRNN:
         # in your implementation, if needed.                                       #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        caches = []
+        (N, T_1) = captions.shape
+        T = T_1 - 1
+        init_hidden, cache = affine_forward(features, W_proj, b_proj)
+        caches.append(cache)
+        sentence_embeds, cache = word_embedding_forward(captions_in, W_embed) # N, T, W 
+        caches.append(cache)
+        h, cache = rnn_forward(sentence_embeds, init_hidden, Wx, Wh, b) # N, T, H
+        caches.append(cache)
+        sentence_scores, cache = temporal_affine_forward(h, W_vocab, b_vocab)
+        caches.append(cache)
+        loss, dout = temporal_softmax_loss(sentence_scores, captions_out, mask)
+        
+        """
+        grads["W_vocab"], grads["b_vocab"] = np.zeros_like(W_vocab) , np.zeros_like(b_vocab)
+        grads["Wx"], grads["Wh"], grads["b"], grads["W_proj"], grads["b_proj"] = \
+        np.zeros_like(Wx) , np.zeros_like(Wh), np.zeros_like(b), np.zeros_like(W_proj), np.zeros_like(b_proj) 
+        """
+        dh, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dout, caches.pop())
 
-        pass
+        """
+        dx: Gradient of inputs, of shape (N, T, D)
+        dh0: Gradient of initial hidden state, of shape (N, H)
+        dWx: Gradient of input-to-hidden weights, of shape (D, H)
+        dWh: Gradient of hidden-to-hidden weights, of shape (H, H)
+        db: Gradient of biases, of shape (H,)
+        """
+
+        dx, dh0, grads["Wx"], grads["Wh"], grads["b"] =  rnn_backward(dh, caches.pop()) # x === sentences_embed
+        grads["W_embed"] = word_embedding_backward(dx, caches.pop())
+        dfeatures, grads["W_proj"], grads["b_proj"] = affine_backward(dh0, caches.pop())
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -215,8 +245,17 @@ class CaptioningRNN:
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        prev_hidden, cache = affine_forward(features, W_proj, b_proj)
+        # 1
+        current_state = W_embed[self._start]
+        # 2
+        for i in range(max_length) :
+          next_hidden = rnn_step_forward(current_state, prev_hidden, Wx, Wh, b)
+          current_state = affine_forward(next_hidden, W_vocab, b_vocab)
+          captions[:, i] = np.max(current_state, axis = 0) 
+          prev_hidden = next_hidden
 
-        pass
+            
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
