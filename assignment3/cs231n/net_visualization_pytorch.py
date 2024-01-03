@@ -4,8 +4,10 @@ import torchvision.transforms as T
 import numpy as np
 from .image_utils import SQUEEZENET_MEAN, SQUEEZENET_STD
 from scipy.ndimage.filters import gaussian_filter1d
+import torchvision
 
 def compute_saliency_maps(X, y, model):
+    
     """
     Compute a class saliency map using the model for images X and labels y.
 
@@ -23,7 +25,6 @@ def compute_saliency_maps(X, y, model):
 
     # Make input tensor require gradient
     X.requires_grad_()
-
     saliency = None
     ##############################################################################
     # TODO: Implement this function. Perform a forward and backward pass through #
@@ -33,8 +34,10 @@ def compute_saliency_maps(X, y, model):
     # the gradients with a backward pass.                                        #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    # passing through the model to have the scores for each class for each batch
+    loss = (model(X).gather(1, y.view(-1, 1)).squeeze()).sum() # total loss of batch 
+    loss.backward() # backward to get loss to X
+    saliency, _ = X.grad.abs().max(axis = 1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -75,8 +78,20 @@ def make_fooling_image(X, target_y, model):
     # You can print your progress over iterations to check your algorithm.       #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+  
+    num_iterations = 100
+    for i in range(num_iterations) :
+        #print(i)
+        #print(target_y)
+        loss = model(X_fooling).squeeze() # loss is indeed the scores
+        if target_y != loss.argmax() :
+            loss[target_y].backward()
+            grads_X_fooling = X_fooling.grad
+            X_fooling.data += (learning_rate * grads_X_fooling) / torch.linalg.vector_norm(grads_X_fooling)
+            X_fooling.grad.zero_()
+        else :
+            break
 
-    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -93,8 +108,13 @@ def class_visualization_update_step(img, model, target_y, l2_reg, learning_rate)
     # Be very careful about the signs of elements in your code.            #
     ########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    img.requires_grad_()
+    score = model(img).squeeze()
+    loss = score[target_y] - l2_reg * img.square().sum()
+    loss.backward()
+    img.data += learning_rate * img.grad / img.grad.norm()
+    img.grad.zero_()
 
-    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ########################################################################
