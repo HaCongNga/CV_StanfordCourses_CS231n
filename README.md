@@ -25,5 +25,5 @@ Find course notes and assignments [here](http://cs231n.github.io) and be sure to
 - [Q1]: Image Captioning with Vanilla RNNs. (_Done_)
 - [Q2]): Image Captioning with LSTMs. 
 - [Q3]: Network Visualization: Saliency maps, Class Visualization, and Fooling Images(_Done_). 
-- [Q4]: Style Transfer. 
+- [Q4]: Style Transfer(_Done_). 
 - [Q5]: Generative Adversarial Networks.
