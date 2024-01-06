@@ -29,8 +29,8 @@ def sample_noise(batch_size, dim, seed=None):
         torch.manual_seed(seed)
 
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    random_matrix = torch.rand(batch_size, dim) * 2 - 1
+    return random_matrix
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -50,8 +50,21 @@ def discriminator(seed=None):
     # HINT: nn.Sequential might be helpful. You'll start by calling Flatten().   #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    """
+    Fully connected layer with input size 784 and output size 256
+    LeakyReLU with alpha 0.01
+    Fully connected layer with input_size 256 and output size 256
+     with alpha 0.01
+    Fully connected layer with input size 256 and output size 1
+    """
+    model = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(in_features=784, out_features=256, bias=True),
+        nn.LeakyReLU(0.01),
+        nn.Linear(in_features=256, out_features=256, bias=True),
+        nn.LeakyReLU(0.01),
+        nn.Linear(in_features=256, out_features=1, bias=True)
+    )
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -76,7 +89,22 @@ def generator(noise_dim=NOISE_DIM, seed=None):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    """
+    Fully connected layer from noise_dim to 1024
+    ReLU
+    Fully connected layer with size 1024
+    ReLU
+    Fully connected layer with size 784
+    TanH (to clip the image to be in the range of [-1,1])
+    """
+    model = nn.Sequential(
+        nn.Linear(in_features=noise_dim, out_features=1024),
+        nn.ReLU(),
+        nn.Linear(in_features=1024, out_features=1024),
+        nn.ReLU(),
+        nn.Linear(in_features=1024, out_features=784),
+        nn.Tanh()
+    )
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -111,8 +139,13 @@ def discriminator_loss(logits_real, logits_fake):
     """
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    num_reals = logits_real.shape[0]
+    num_fakes = logits_fake.shape[0]
+    real_labels = torch.ones(num_reals).type(dtype)
+    fake_labels = torch.zeros(num_fakes).type(dtype)
+    real_loss = bce_loss(logits_real, real_labels)
+    fake_loss = bce_loss(logits_fake, fake_labels)
+    loss = real_loss + fake_loss
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -130,7 +163,9 @@ def generator_loss(logits_fake):
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_fakes = logits_fake.shape[0]
+    labels = torch.ones(num_fakes).type(dtype)
+    loss = bce_loss(logits_fake, labels)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -149,7 +184,7 @@ def get_optimizer(model):
     optimizer = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    optimizer = torch.optim.Adam(model.parameters(), lr = 1e-3,betas=(0.5, 0.999))
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return optimizer
@@ -167,8 +202,16 @@ def ls_discriminator_loss(scores_real, scores_fake):
     """
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    
+    num_real = scores_real.shape[0]
+    num_fake = scores_fake.shape[0]
+    """
+    real_labels = torch.ones(num_real).type(dtype)
+    fake_labels = torch.zeros(num_fake).type(dtype)
+    """
+    real_loss = (((scores_real - 1) ** 2).sum() * 0.5)/num_real
+    fake_loss = (((scores_fake-0) ** 2).sum() * 0.5)/num_fake
+    loss = real_loss + fake_loss
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -185,8 +228,12 @@ def ls_generator_loss(scores_fake):
     """
     loss = None
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    """
+    num_fakes = scores_fake.shape[0]
+    labels = torch.ones(num_fakes).type(dtype)
+    """
+    num_fakes = scores_fake.shape[0]
+    loss = (0.5 * ((scores_fake-1) ** 2).sum())/num_fakes
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     return loss
@@ -204,7 +251,32 @@ def build_dc_classifier(batch_size):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    """
+    Conv2D: 32 Filters, 5x5, Stride 1
+    Leaky ReLU(alpha=0.01)
+    Max Pool 2x2, Stride 2
+    Conv2D: 64 Filters, 5x5, Stride 1
+    Leaky ReLU(alpha=0.01)
+    Max Pool 2x2, Stride 2
+    Flatten
+    Fully Connected with output size 4 x 4 x 64
+    Leaky ReLU(alpha=0.01)
+    Fully Connected with output size 1
+    """
+    model = nn.Sequential(
+        Unflatten(batch_size, 1, 28, 28),
+        nn.Conv2d(in_channels=1, out_channels=32, kernel_size=5, stride=1),
+        nn.LeakyReLU(0.01),
+        nn.MaxPool2d(kernel_size=2, stride=2),
+        nn.Conv2d(in_channels=32, out_channels=64, kernel_size=5, stride=1),
+        nn.LeakyReLU(0.01),
+        nn.MaxPool2d(kernel_size=2, stride=2),
+        nn.Flatten(),
+        nn.Linear(64*4*4, 4*4*64),
+        nn.LeakyReLU(0.01),
+        nn.Linear(4*4*64,1)
+    )
+    return model
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -224,9 +296,37 @@ def build_dc_generator(noise_dim=NOISE_DIM):
     # HINT: nn.Sequential might be helpful.                                      #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    """
+    Fully connected with output size 1024
+    ReLU
+    BatchNorm
+    Fully connected with output size 7 x 7 x 128
+    ReLU
+    BatchNorm
+    Use Unflatten() to reshape into Image Tensor of shape 7, 7, 128
+    ConvTranspose2d: 64 filters of 4x4, stride 2, 'same' padding (use padding=1)
+    ReLU
+    BatchNorm
+    ConvTranspose2d: 1 filter of 4x4, stride 2, 'same' padding (use padding=1)
+    TanH
+    Should have a 28x28x1 image, reshape back into 784 vector (using Flatten())
+    """
+    model = nn.Sequential(
+        nn.Linear(in_features=noise_dim, out_features=1024),
+        nn.ReLU(),
+        nn.BatchNorm1d(num_features=1024),
+        nn.Linear(in_features=1024, out_features=7*7*128),
+        nn.ReLU(),
+        nn.BatchNorm1d(num_features=7*7*128),
+        Unflatten(-1, 128, 7, 7),
+        nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=4, stride=2, padding=1),
+        nn.ReLU(),
+        nn.BatchNorm2d(num_features=64),
+        nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=4, stride=2, padding=1),
+        nn.Tanh(),
+        nn.Flatten()
+    )
+    return model
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
