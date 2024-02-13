@@ -180,7 +180,7 @@ class KNearestNeighbor(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             element_frequencies = np.unique(closest_y, return_counts=True)
-            element_frequencies[0][np.argmin(element_frequencies[1], axis = 0)]
+            y_pred[i] = element_frequencies[0][np.argmax(element_frequencies[1], axis = 0)]
 
 
 
