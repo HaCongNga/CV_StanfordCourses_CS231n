@@ -8,7 +8,7 @@ Find course notes and assignments [here](http://cs231n.github.io) and be sure to
 
 
 ### Assignment 1:
-- [Q1]: k-Nearest Neighbor classifier. 
+- [Q1]: k-Nearest Neighbor classifier. (_Done_)
 - [Q2]: Training a Support Vector Machine. 
 - [Q3]: Implement a Softmax classifier. 
 - [Q4]: Two-Layer Neural Network. 
